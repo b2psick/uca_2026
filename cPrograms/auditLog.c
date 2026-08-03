@@ -1,75 +1,71 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <fcntl.h>
+    #include <unistd.h>
+    #include <string.h>
 
-#define BUF_SIZE 1
+    #define BUF_SIZE 1024
 
-int main(int argc, char* argv[]) {
+    int main(int argc, char* argv[]) {
 
-    int fd, openFlags;
-    mode_t filePerms;
-    ssize_t numRead;
-    char ch;
-    int line=1;
-    char lineNo;
+        int inputFd, outputFd, openFlags;
+        mode_t filePerms;
+        ssize_t numRead;
+        char buf[BUF_SIZE];
 
-    if (argc != 3 && argc != 4) {
-        printf("./auditlog <filename> --add \"message\"\n");
-        printf("./auditlog <filename> --view\n");
-        exit(-1);
-    }
-
-    if (argc == 4) {
-        openFlags = O_CREAT | O_WRONLY | O_APPEND;
-        filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-
-        fd = open(argv[1], openFlags, filePerms);
-
-        if (fd == -1) {
-            printf("Error opening file\n");
+        if(argc != 2 && argc != 3) {
+            printf("Usage ./auditlog\n");
             exit(-1);
         }
 
-        write(fd, argv[3], strlen(argv[3]));
-        write(fd, "\n", 1);
+        if(strcmp("--view",argv[1]) == 0) {
+            inputFd = open("audit.log", O_RDONLY);
 
-        close(fd);
-    } else {
-        fd = open(argv[1], O_RDONLY);
-
-        if (fd == -1) {
-            printf("Error opening file\n");
-            exit(-1);
-        }
-
-        lineNo = line + '0';
-
-        write(STDOUT_FILENO, &lineNo, 1);
-        write(STDOUT_FILENO, ": ", 2);
-
-        while ((numRead = read(fd, &ch, BUF_SIZE)) > 0) {
-            write(STDOUT_FILENO, &ch, 1);
-
-            if (ch == '\n')
-            {
-                if (read(fd, &ch, BUF_SIZE) > 0)
-                {
-                    line++;
-
-                    lineNo = line + '0';
-
-                    write(STDOUT_FILENO, &lineNo, 1);
-                    write(STDOUT_FILENO, ": ", 2);
-
-                    write(STDOUT_FILENO, &ch, 1);
-                }
+            if(inputFd == -1) {
+                printf("error opening file");
+                exit(-1);
             }
+
+            int lineCount = 1;
+            printf("%d: ", lineCount);
+            fflush(stdout);
+
+            while((numRead = read(inputFd, buf, BUF_SIZE)) > 0) {
+
+                for(int i = 0; i < numRead; i++) {
+
+                    write(STDOUT_FILENO, &buf[i], 1); // so the write needs the pointer to the buf element
+                    
+                    if(buf[i] == '\n') {
+                        lineCount++;
+                        printf("%d: ", lineCount);
+                        fflush(stdout);
+                    }
+                }
+
+            }
+
+            if(numRead == -1) {
+                perror("read");
+            }
+            
+            close(inputFd);
+        } else if(strcmp("--add",argv[1]) == 0) {
+            outputFd = open("audit.log", O_WRONLY | O_APPEND);
+
+            if(outputFd == -1) {
+                printf("error opening file");
+                exit(-1);
+            }
+
+            write(outputFd, argv[2], strlen(argv[2]));
+            write(outputFd, "\n", 1);
+            
+            close(outputFd);
+        } else {
+            printf("invalid command");
         }
-
-        close(fd);
+        
+        return 0;
+        
     }
-
-    return 0;
-}
