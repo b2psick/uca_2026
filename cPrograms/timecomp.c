@@ -31,7 +31,7 @@ void bubbleSort(int* arr,int n) {
         int swapped = 0;
         for(int j = 0; j < n - i -1; j++){
             if(arr[j] > arr[j + 1]) {
-                swap(arr, j, j+1);
+                swap(arr, j, j + 1);
                 swapped = 1;
             }
         }
@@ -53,71 +53,54 @@ void selectionSort(int* arr,int n){
     }
 }
 
-void merge(int* arr, int left, int mid, int right) {
-    int n1 = mid - left + 1;
-    int n2 = right - mid;
-
-    int L[n1], R[n2];
-
-    for (int i = 0; i < n1; i++)
-        L[i] = arr[left + i];
-
-    for (int i = 0; i < n2; i++)
-        R[i] = arr[mid + 1 + i];
-
-    int i = 0, j = 0, k = left;
-
-    while (i < n1 && j < n2) {
-        if (L[i] <= R[j])
-            arr[k++] = L[i++];
-        else
-            arr[k++] = R[j++];
-    }
-
-    while (i < n1)
-        arr[k++] = L[i++];
-
-    while (j < n2)
-        arr[k++] = R[j++];
-}
-
-void mergeSort(int* arr, int left, int right) {
-    if (left < right) {
-        int mid = left + (right - left) / 2;
-
-        mergeSort(arr, left, mid);
-        mergeSort(arr, mid + 1, right);
-
-        merge(arr, left, mid, right);
-    }
-}
-
-int partition(int arr[], int low, int high) {
-    int pivot = arr[high];
-    int i = low - 1;
-
-    for (int j = low; j < high; j++) {
-        if (arr[j] <= pivot) {
-            i++;
-            int temp = arr[i];
-            arr[i] = arr[j];
-            arr[j] = temp;
+void merge(int* arr, int left, int mid, int right, int* aux) {
+    int i = left;
+    int j = mid + 1;
+    int k = left;
+    while(i <= mid || j <= right) {
+        if(i > mid) {
+            aux[k++] = arr[j++];
+        }else if(j > right) {
+            aux[k++] = arr[i++];
+        }else if(arr[i] > arr[j]) {
+            aux[k++] = arr[j++];
+        }else {
+            aux[k++] = arr[i++];
         }
     }
 
-    int temp = arr[i + 1];
-    arr[i + 1] = arr[high];
-    arr[high] = temp;
-
-    return i + 1;
+    for(int i = left; i <= right; i++) {
+        arr[i] = aux[i];
+    }
 }
 
-void quickSort(int arr[], int low, int high) {
-    if (low < high) {
-        int pi = partition(arr, low, high);
+void mergeSort(int* arr, int left, int right, int* aux) {
+    if(left < right) {
+        int mid = left + (right - left) / 2;
+        mergeSort(arr, left, mid, aux);
+        mergeSort(arr, mid + 1, right, aux);
+        merge(arr, left, mid, right, aux);
+    }
+}
 
-        quickSort(arr, low, pi - 1);
-        quickSort(arr, pi + 1, high);
+int partition(int* arr, int left, int right) {
+    int j = left;
+    int pivot = arr[left];
+    for(int i = left; i <= right; i++) {
+        if(arr[i] < pivot) {
+            j++;
+            swap(arr, j, i);
+        }
+    }
+    swap(arr, left, j);
+    return j;
+}
+
+void quickSort(int* arr, int left, int right) {
+    if(left < right) {
+        int pivot = partition(arr, left, right);
+        quickSort(arr, left, pivot - 1); 
+        quickSort(arr, pivot + 1, right); 
     }
 }
 
